@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Videosync</title>
+        <link rel="stylesheet" href="/static/main.css" />
+        <script src="https://www.youtube.com/player_api"></script>
+        <script src="/static/room.js"></script>
+        <script>
+            function onYouTubePlayerAPIReady() {
+                initRoom("{{.Id}}");
+            }
+        </script>
+    </head>
+
+    <body>
+        <h1>{{.Id}}</h1>
+
+        <div id="yt_player"></div>
+    </body>
+</html>
