@@ -11,6 +11,7 @@ import (
 	"videosync/internal"
 
 	"github.com/gorilla/websocket"
+	"github.com/joho/godotenv"
 )
 
 //go:embed static
@@ -55,6 +56,11 @@ func renderTemplate(w io.Writer, name string, data any) error {
 }
 
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatalf("error loading .env file: %v", err)
+	}
+
 	flag.Parse()
 	var staticHandler http.Handler
 	if *isDev {

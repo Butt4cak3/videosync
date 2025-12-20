@@ -9,14 +9,24 @@
         <script src="/static/room.js"></script>
         <script>
             function onYouTubePlayerAPIReady() {
-                initRoom("{{.Id}}");
+                initRoom('{{.Id}}');
             }
         </script>
     </head>
 
-    <body>
+    <body class="dark">
         <h1>{{.Id}}</h1>
 
         <div id="yt_player"></div>
+
+        <div>
+            <input
+                id="video_url_input"
+                type="text"
+                placeholder="Paste YouTube URL"
+                style="width: 30em"
+            />
+            <button id="play_video_button" type="submit">Play video</button>
+        </div>
     </body>
 </html>

@@ -4,6 +4,38 @@ let ws;
 let serverState = { state: null, position: null };
 let syncing = false;
 
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("video_url_input");
+    const button = document.getElementById("play_video_button");
+    if (
+        !(input instanceof HTMLInputElement) ||
+        !(button instanceof HTMLButtonElement)
+    ) {
+        return;
+    }
+
+    input.addEventListener("keypress", (event) => {
+        if (event.code === "Enter") {
+            playVideo(input.value);
+        }
+    });
+
+    button.addEventListener("click", () => {
+        playVideo(input.value);
+    });
+});
+
+function playVideo(url) {
+    ws.send(
+        JSON.stringify({
+            type: "loadurl",
+            payload: {
+                url,
+            },
+        })
+    );
+}
+
 function createPlayer(events) {
     return new Promise((resolve) => {
         const player = new YT.Player("yt_player", {

@@ -8,10 +8,11 @@ import (
 type MessageType string
 
 const (
-	Init  MessageType = "init"
-	Play  MessageType = "play"
-	Pause MessageType = "pause"
-	Load  MessageType = "load"
+	Init    MessageType = "init"
+	Play    MessageType = "play"
+	Pause   MessageType = "pause"
+	Load    MessageType = "load"
+	LoadUrl MessageType = "loadurl"
 )
 
 type Message struct {
@@ -37,6 +38,10 @@ type LoadMessage struct {
 	VideoId string `json:"videoId"`
 }
 
+type LoadUrlMessage struct {
+	Url string `json:"url"`
+}
+
 func (m *Message) UnmarshalJSON(data []byte) error {
 	var temp struct {
 		Type    MessageType     `json:"type"`
@@ -51,25 +56,31 @@ func (m *Message) UnmarshalJSON(data []byte) error {
 
 	switch temp.Type {
 	case Play:
-		var playPayload PlayMessage
-		if err := json.Unmarshal(temp.Payload, &playPayload); err != nil {
+		var payload PlayMessage
+		if err := json.Unmarshal(temp.Payload, &payload); err != nil {
 			return err
 		}
-		m.Payload = playPayload
+		m.Payload = payload
 	case Pause:
-		var pausePayload PauseMessage
-		if err := json.Unmarshal(temp.Payload, &pausePayload); err != nil {
+		var payload PauseMessage
+		if err := json.Unmarshal(temp.Payload, &payload); err != nil {
 			return err
 		}
-		m.Payload = pausePayload
+		m.Payload = payload
 	case Load:
-		var loadPayload LoadMessage
-		if err := json.Unmarshal(temp.Payload, &loadPayload); err != nil {
+		var payload LoadMessage
+		if err := json.Unmarshal(temp.Payload, &payload); err != nil {
 			return err
 		}
-		m.Payload = loadPayload
+		m.Payload = payload
+	case LoadUrl:
+		var payload LoadUrlMessage
+		if err := json.Unmarshal(temp.Payload, &payload); err != nil {
+			return err
+		}
+		m.Payload = payload
 	default:
-		return fmt.Errorf("unknown messaget ype: %s", temp.Type)
+		return fmt.Errorf("unknown message type: %s", temp.Type)
 	}
 
 	return nil

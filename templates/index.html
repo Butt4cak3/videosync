@@ -1,14 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Videosync</title>
+        <link rel="stylesheet" href="static/main.css" />
+        <link rel="stylesheet" href="static/index.css" />
+        <script src="static/index.js"></script>
+    </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Videosync</title>
-</head>
-
-<body>
-    <a href="/room/example">Example Room</a>
-</body>
-
+    <body class="dark">
+        <div class="join_form_wrapper">
+            <div class="join_form">
+                <input
+                    id="room_name_input"
+                    type="text"
+                    class="room_name_input"
+                    placeholder="Enter room name"
+                />
+                <button
+                    id="join_room_button"
+                    type="submit"
+                    class="join_room_button"
+                >
+                    Join room
+                </button>
+            </div>
+        </div>
+    </body>
 </html>

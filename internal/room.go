@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"videosync/internal/youtube"
 )
 
 type JoinEvent struct {
@@ -24,6 +25,11 @@ type PlayEvent struct {
 type PauseEvent struct {
 	user     *User
 	position float32
+}
+
+type LoadEvent struct {
+	user    *User
+	videoId string
 }
 
 type Room struct {
@@ -56,7 +62,7 @@ func (room *Room) SyncState() {
 	for {
 		select {
 		case <-ticker.C:
-			if room.playback.Position() > 120 {
+			if room.playback.Position() > room.playback.Duration {
 				room.logger.Println("Reloading video")
 				room.load(room.playback.VideoId)
 				time.Sleep(time.Second)
@@ -82,6 +88,8 @@ func (room *Room) WatchEvents() {
 			room.handlePlay(e.user, e.position)
 		case PauseEvent:
 			room.handlePause(e.user, e.position)
+		case LoadEvent:
+			room.load(e.videoId)
 		}
 		room.mu.Unlock()
 	}
@@ -153,11 +161,22 @@ func (room *Room) handlePause(user *User, position float32) {
 	room.Send(user, Message{Type: Pause, Payload: PauseMessage{position}})
 }
 
+func (room *Room) Load(user *User, videoId string) {
+	room.Dispatch(LoadEvent{user, videoId})
+}
+
 func (room *Room) load(videoId string) {
+	duration, err := youtube.GetVideoDuration(videoId)
+	if err != nil {
+		return
+	}
+
 	room.playback.VideoId = videoId
 	room.playback.LatestPosition = 0
 	room.playback.LatestPositionTime = time.Now()
 	room.playback.State = Paused
+	room.playback.Duration = float32(duration.Seconds())
+
 	room.Send(nil, Message{Type: Load, Payload: LoadMessage{VideoId: videoId}})
 }
 

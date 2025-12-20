@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync/atomic"
 	"videosync/internal"
+	"videosync/internal/youtube"
 )
 
 var nextClientId atomic.Int32
@@ -45,6 +46,10 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 			room.Play(user, payload.Position)
 		case internal.PauseMessage:
 			room.Pause(user, payload.Position)
+		case internal.LoadUrlMessage:
+			if videoId, ok := youtube.ParseUrl(payload.Url); ok {
+				room.Load(user, videoId)
+			}
 		default:
 			room.Kick(user)
 		}

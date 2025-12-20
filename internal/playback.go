@@ -16,6 +16,7 @@ type Playback struct {
 	State              PlaybackState
 	LatestPosition     float32
 	LatestPositionTime time.Time
+	Duration           float32
 }
 
 func (p Playback) Position() float32 {
