@@ -41,6 +41,9 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	if payload, ok := message.Payload.(internal.IntroduceMessage); ok {
 		user.Name = payload.UserName
+		if len(user.Name) > 25 {
+			user.Name = user.Name[:25]
+		}
 	} else {
 		conn.Close()
 		return

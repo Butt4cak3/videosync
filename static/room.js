@@ -37,10 +37,9 @@ document.addEventListener("DOMContentLoaded", () => {
         playVideo(input.value);
     });
 
-    window.addEventListener("resize", (event) => {
+    window.addEventListener("resize", () => {
         if (player) {
-            const width = playerWrapper.clientWidth;
-            const height = width / (16 / 9);
+            const { width, height } = calculatePlayerSize();
             player.setSize(width, height);
         }
     });
@@ -126,10 +125,23 @@ function updatePlayerState(newState) {
     player.seekTo(newState.position);
 }
 
-async function initRoom(userName) {
+/**
+ * @return {{width: number; height: number;}}
+ */
+function calculatePlayerSize() {
     const playerWrapper = document.getElementById("player_wrapper");
-    const playerWidth = playerWrapper.clientWidth;
-    const playerHeight = playerWidth / (16 / 9);
+    let width = playerWrapper.clientWidth;
+    let height = width / (16 / 9);
+    if (height > window.innerHeight * 0.75) {
+        height = window.innerHeight * 0.75;
+        width = height * (16 / 9);
+    }
+    console.log({ width, height });
+    return { width, height };
+}
+
+async function initRoom(userName) {
+    const { width: playerWidth, height: playerHeight } = calculatePlayerSize();
 
     await youtubeApiPromise;
     player = await createPlayer(playerWidth, playerHeight, {
