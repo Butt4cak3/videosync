@@ -27,8 +27,10 @@
                 justify-content: space-between;
             "
         >
-            <div style="flex: 1 1 0">
-                <div id="yt_player"></div>
+            <div style="flex: 1 1 0; overflow: hidden">
+                <div id="player_wrapper" style="overflow: hidden; width: 100%">
+                    <div id="yt_player"></div>
+                </div>
 
                 <div>
                     <input
@@ -42,7 +44,7 @@
                     </button>
                 </div>
             </div>
-            <div style="flex: 0 0 20em">
+            <div style="flex: 0 0 12em; margin-left: 2em; overflow: hidden">
                 <h2>Users</h2>
                 <div id="userlist"></div>
             </div>

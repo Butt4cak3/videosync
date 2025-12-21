@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const usernameInput = document.getElementById("username_input");
     const usernameButton = document.getElementById("submit_username_button");
     const usernameModal = document.getElementById("username_modal");
+    const playerWrapper = document.getElementById("player_wrapper");
     userlist = document.getElementById("userlist");
 
     if (
@@ -20,7 +21,8 @@ document.addEventListener("DOMContentLoaded", () => {
         !(button instanceof HTMLButtonElement) ||
         !(usernameInput instanceof HTMLInputElement) ||
         !(usernameButton instanceof HTMLButtonElement) ||
-        !(usernameModal instanceof HTMLElement)
+        !(usernameModal instanceof HTMLElement) ||
+        !(playerWrapper instanceof HTMLElement)
     ) {
         return;
     }
@@ -33,6 +35,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     button.addEventListener("click", () => {
         playVideo(input.value);
+    });
+
+    window.addEventListener("resize", (event) => {
+        if (player) {
+            const width = playerWrapper.clientWidth;
+            const height = width / (16 / 9);
+            player.setSize(width, height);
+        }
     });
 
     const cachedUsername = localStorage.getItem("username");
@@ -75,11 +85,11 @@ function playVideo(url) {
     );
 }
 
-function createPlayer(events) {
+function createPlayer(width, height, events) {
     return new Promise((resolve) => {
         const player = new YT.Player("yt_player", {
-            width: 1280,
-            height: 720,
+            width: width,
+            height: height,
             events: {},
             events: {
                 ...events,
@@ -117,8 +127,12 @@ function updatePlayerState(newState) {
 }
 
 async function initRoom(userName) {
+    const playerWrapper = document.getElementById("player_wrapper");
+    const playerWidth = playerWrapper.clientWidth;
+    const playerHeight = playerWidth / (16 / 9);
+
     await youtubeApiPromise;
-    player = await createPlayer({
+    player = await createPlayer(playerWidth, playerHeight, {
         onStateChange: (event) => {
             if (syncing) {
                 return;
