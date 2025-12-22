@@ -1,4 +1,4 @@
-package internal
+package room
 
 import "github.com/gorilla/websocket"
 

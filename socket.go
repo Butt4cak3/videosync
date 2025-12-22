@@ -6,8 +6,9 @@ import (
 	"net/http"
 	"os"
 	"sync/atomic"
-	"videosync/internal"
-	"videosync/internal/youtube"
+	msg "videosync/message"
+	rooms "videosync/room"
+	"videosync/youtube"
 )
 
 var nextClientId atomic.Int32
@@ -16,8 +17,8 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 	clientId := nextClientId.Add(1)
 	logger := log.New(os.Stdout, fmt.Sprintf("[client #%d] ", clientId), log.LstdFlags)
 	logger.Println("Client connected")
-	room := rooms.Get(r.PathValue("room_id"))
-	var user *internal.User
+	room := roomManager.Get(r.PathValue("room_id"))
+	var user *rooms.User
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		logger.Println(err)
@@ -31,15 +32,15 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 		conn.Close()
 	}()
 
-	user = &internal.User{Id: int(clientId), Conn: conn}
+	user = &rooms.User{Id: int(clientId), Conn: conn}
 
-	var message internal.Message
+	var message msg.Message
 	err = conn.ReadJSON(&message)
 	if err != nil {
 		logger.Printf("Read error: %v", err)
 		return
 	}
-	if payload, ok := message.Payload.(internal.IntroduceMessage); ok {
+	if payload, ok := message.Payload.(msg.IntroduceMessage); ok {
 		user.Name = payload.UserName
 		if len(user.Name) > 25 {
 			user.Name = user.Name[:25]
@@ -52,18 +53,18 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 	room.Join(user)
 
 	for {
-		var message internal.Message
+		var message msg.Message
 		err := conn.ReadJSON(&message)
 		if err != nil {
 			logger.Printf("Read error: %v", err)
 			return
 		}
 		switch payload := message.Payload.(type) {
-		case internal.PlayMessage:
+		case msg.PlayMessage:
 			room.Play(user, payload.Position)
-		case internal.PauseMessage:
+		case msg.PauseMessage:
 			room.Pause(user, payload.Position)
-		case internal.LoadUrlMessage:
+		case msg.LoadUrlMessage:
 			if videoId, ok := youtube.ParseUrl(payload.Url); ok {
 				room.Load(user, videoId)
 			}

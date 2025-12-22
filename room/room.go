@@ -1,4 +1,4 @@
-package internal
+package room
 
 import (
 	"fmt"
@@ -6,7 +6,8 @@ import (
 	"os"
 	"sync"
 	"time"
-	"videosync/internal/youtube"
+	"videosync/message"
+	"videosync/youtube"
 )
 
 type JoinEvent struct {
@@ -114,18 +115,18 @@ func (room *Room) handleJoin(user *User) {
 		users[i] = user.Name
 	}
 
-	user.Conn.WriteJSON(Message{
-		Type: Init,
-		Payload: InitMessage{
+	user.Conn.WriteJSON(message.Message{
+		Type: message.Init,
+		Payload: message.InitMessage{
 			VideoId:       room.playback.VideoId,
 			VideoPos:      room.playback.Position(),
 			PlaybackState: int(room.playback.State),
 			Users:         users,
 		},
 	})
-	room.Send(user, Message{
-		Type:    Join,
-		Payload: JoinMessage{UserName: user.Name},
+	room.Send(user, message.Message{
+		Type:    message.Join,
+		Payload: message.JoinMessage{UserName: user.Name},
 	})
 	room.logger.Printf("Client #%d joined\n", user.Id)
 }
@@ -145,9 +146,9 @@ func (room *Room) handleLeave(user *User) {
 	if len(room.users) == 0 {
 		room.close()
 	}
-	room.Send(user, Message{
-		Type:    Leave,
-		Payload: LeaveMessage{UserName: user.Name},
+	room.Send(user, message.Message{
+		Type:    message.Leave,
+		Payload: message.LeaveMessage{UserName: user.Name},
 	})
 	room.logger.Printf("Client #%d left\n", user.Id)
 }
@@ -161,7 +162,7 @@ func (room *Room) handlePlay(user *User, position float32) {
 	room.playback.LatestPosition = position
 	room.playback.LatestPositionTime = time.Now()
 	room.playback.State = Playing
-	room.Send(user, Message{Type: Play, Payload: PlayMessage{position}})
+	room.Send(user, message.Message{Type: message.Play, Payload: message.PlayMessage{position}})
 }
 
 func (room *Room) Pause(user *User, position float32) {
@@ -173,7 +174,7 @@ func (room *Room) handlePause(user *User, position float32) {
 	room.playback.LatestPosition = position
 	room.playback.LatestPositionTime = time.Now()
 	room.playback.State = Paused
-	room.Send(user, Message{Type: Pause, Payload: PauseMessage{position}})
+	room.Send(user, message.Message{Type: message.Pause, Payload: message.PauseMessage{position}})
 }
 
 func (room *Room) Load(user *User, videoId string) {
@@ -192,14 +193,14 @@ func (room *Room) load(videoId string) {
 	room.playback.State = Paused
 	room.playback.Duration = float32(duration.Seconds())
 
-	room.Send(nil, Message{Type: Load, Payload: LoadMessage{VideoId: videoId}})
+	room.Send(nil, message.Message{Type: message.Load, Payload: message.LoadMessage{VideoId: videoId}})
 }
 
 func (room *Room) Kick(user *User) {
 	user.Conn.Close()
 }
 
-func (room *Room) Send(from *User, message Message) {
+func (room *Room) Send(from *User, message message.Message) {
 	for _, user := range room.users {
 		if user != from {
 			user.Conn.WriteJSON(message)

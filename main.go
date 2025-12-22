@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"videosync/internal"
+	rooms "videosync/room"
 
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
@@ -26,7 +26,7 @@ const listenAddress = "0.0.0.0:8080"
 
 var upgrader = websocket.Upgrader{}
 
-var rooms *internal.RoomManager = internal.NewRoomManager()
+var roomManager *rooms.RoomManager = rooms.NewRoomManager()
 
 func loadTemplate(name string) (*template.Template, error) {
 	var content []byte
@@ -92,7 +92,7 @@ func handleHome(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleRoom(w http.ResponseWriter, r *http.Request) {
-	room := rooms.Get(r.PathValue("room_id"))
+	room := roomManager.Get(r.PathValue("room_id"))
 	err := renderTemplate(w, "room.html", room)
 	if err != nil {
 		log.Println(err)
