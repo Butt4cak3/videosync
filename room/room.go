@@ -1,44 +1,16 @@
 package room
 
 import (
-	"fmt"
-	"log"
-	"os"
 	"sync"
 	"time"
 	"videosync/message"
 	"videosync/youtube"
 )
 
-type JoinEvent struct {
-	user *User
-}
-
-type LeaveEvent struct {
-	user *User
-}
-
-type PlayEvent struct {
-	user     *User
-	position float32
-}
-
-type PauseEvent struct {
-	user     *User
-	position float32
-}
-
-type LoadEvent struct {
-	user    *User
-	videoId string
-}
-
 type Room struct {
 	Id       string
 	users    []*User
-	events   chan any
 	mu       sync.Mutex
-	logger   *log.Logger
 	playback Playback
 	stopSync chan bool
 }
@@ -47,14 +19,8 @@ func NewRoom(id string) *Room {
 	return &Room{
 		Id:       id,
 		users:    make([]*User, 0, 2),
-		events:   make(chan any, 10),
-		logger:   log.New(os.Stdout, fmt.Sprintf("[#%s] ", id), log.LstdFlags),
 		stopSync: make(chan bool),
 	}
-}
-
-func (room *Room) Dispatch(event any) {
-	room.events <- event
 }
 
 func (room *Room) SyncState() {
@@ -64,10 +30,9 @@ func (room *Room) SyncState() {
 		select {
 		case <-ticker.C:
 			if room.playback.Position() > room.playback.Duration {
-				room.logger.Println("Reloading video")
-				room.load(room.playback.VideoId)
+				room.Load(room.playback.VideoId)
 				time.Sleep(time.Second)
-				room.handlePlay(nil, 0)
+				room.Play(nil, 0)
 			}
 		case <-room.stopSync:
 			return
@@ -75,39 +40,13 @@ func (room *Room) SyncState() {
 	}
 }
 
-func (room *Room) WatchEvents() {
-	room.logger.Println("Watching events")
-
-	for event := range room.events {
-		room.mu.Lock()
-		switch e := event.(type) {
-		case JoinEvent:
-			room.handleJoin(e.user)
-		case LeaveEvent:
-			room.handleLeave(e.user)
-		case PlayEvent:
-			room.handlePlay(e.user, e.position)
-		case PauseEvent:
-			room.handlePause(e.user, e.position)
-		case LoadEvent:
-			room.load(e.videoId)
-		}
-		room.mu.Unlock()
-	}
-
-	room.logger.Println("Stopped watching events")
-}
-
 func (room *Room) close() {
 	room.stopSync <- true
-	close(room.events)
 }
 
 func (room *Room) Join(user *User) {
-	room.Dispatch(JoinEvent{user})
-}
-
-func (room *Room) handleJoin(user *User) {
+	room.mu.Lock()
+	defer room.mu.Unlock()
 	room.users = append(room.users, user)
 	users := make([]string, len(room.users))
 
@@ -128,14 +67,11 @@ func (room *Room) handleJoin(user *User) {
 		Type:    message.Join,
 		Payload: message.JoinMessage{UserName: user.Name},
 	})
-	room.logger.Printf("Client #%d joined\n", user.Id)
 }
 
 func (room *Room) Leave(user *User) {
-	room.Dispatch(LeaveEvent{user})
-}
-
-func (room *Room) handleLeave(user *User) {
+	room.mu.Lock()
+	defer room.mu.Unlock()
 	for i := range len(room.users) {
 		if room.users[i] == user {
 			room.users[i] = room.users[len(room.users)-1]
@@ -150,38 +86,29 @@ func (room *Room) handleLeave(user *User) {
 		Type:    message.Leave,
 		Payload: message.LeaveMessage{UserName: user.Name},
 	})
-	room.logger.Printf("Client #%d left\n", user.Id)
 }
 
 func (room *Room) Play(user *User, position float32) {
-	room.Dispatch(PlayEvent{user, position})
-}
-
-func (room *Room) handlePlay(user *User, position float32) {
-	room.logger.Printf("Playing from %f\n", position)
+	room.mu.Lock()
+	defer room.mu.Unlock()
 	room.playback.LatestPosition = position
 	room.playback.LatestPositionTime = time.Now()
 	room.playback.State = Playing
-	room.Send(user, message.Message{Type: message.Play, Payload: message.PlayMessage{position}})
+	room.Send(user, message.Message{Type: message.Play, Payload: message.PlayMessage{Position: position}})
 }
 
 func (room *Room) Pause(user *User, position float32) {
-	room.Dispatch(PauseEvent{user, position})
-}
-
-func (room *Room) handlePause(user *User, position float32) {
-	room.logger.Printf("Paused at %f\n", position)
+	room.mu.Lock()
+	defer room.mu.Unlock()
 	room.playback.LatestPosition = position
 	room.playback.LatestPositionTime = time.Now()
 	room.playback.State = Paused
-	room.Send(user, message.Message{Type: message.Pause, Payload: message.PauseMessage{position}})
+	room.Send(user, message.Message{Type: message.Pause, Payload: message.PauseMessage{Position: position}})
 }
 
-func (room *Room) Load(user *User, videoId string) {
-	room.Dispatch(LoadEvent{user, videoId})
-}
-
-func (room *Room) load(videoId string) {
+func (room *Room) Load(videoId string) {
+	room.mu.Lock()
+	defer room.mu.Unlock()
 	duration, err := youtube.GetVideoDuration(videoId)
 	if err != nil {
 		return

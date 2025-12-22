@@ -25,12 +25,10 @@ func (rm *RoomManager) Get(id string) *Room {
 	} else {
 		r := NewRoom(id)
 		log.Printf("Created room %s\n", id)
-		go r.SyncState()
 		go func() {
 			defer rm.Delete(id)
-			r.WatchEvents()
+			r.SyncState()
 		}()
-		r.load("Ne7fbb9c-BU")
 		rm.rooms[id] = r
 		return r
 	}

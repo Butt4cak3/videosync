@@ -1,10 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
-	"os"
 	"sync/atomic"
 	msg "videosync/message"
 	rooms "videosync/room"
@@ -15,17 +13,15 @@ var nextClientId atomic.Int32
 
 func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 	clientId := nextClientId.Add(1)
-	logger := log.New(os.Stdout, fmt.Sprintf("[client #%d] ", clientId), log.LstdFlags)
-	logger.Println("Client connected")
 	room := roomManager.Get(r.PathValue("room_id"))
 	var user *rooms.User
 	conn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		logger.Println(err)
+		log.Println(err)
 		return
 	}
 	defer func() {
-		logger.Println("Client disconnected")
+		log.Println("Client disconnected")
 		if user != nil {
 			room.Leave(user)
 		}
@@ -37,7 +33,7 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 	var message msg.Message
 	err = conn.ReadJSON(&message)
 	if err != nil {
-		logger.Printf("Read error: %v", err)
+		log.Printf("Read error: %v", err)
 		return
 	}
 	if payload, ok := message.Payload.(msg.IntroduceMessage); ok {
@@ -56,7 +52,7 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 		var message msg.Message
 		err := conn.ReadJSON(&message)
 		if err != nil {
-			logger.Printf("Read error: %v", err)
+			log.Printf("Read error: %v", err)
 			return
 		}
 		switch payload := message.Payload.(type) {
@@ -66,7 +62,7 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 			room.Pause(user, payload.Position)
 		case msg.LoadUrlMessage:
 			if videoId, ok := youtube.ParseUrl(payload.Url); ok {
-				room.Load(user, videoId)
+				room.Load(videoId)
 			}
 		default:
 			room.Kick(user)

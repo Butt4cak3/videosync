@@ -207,7 +207,9 @@ async function initRoom(userName) {
         const { type, payload } = JSON.parse(event.data);
         switch (type) {
             case "init":
-                player.loadVideoById(payload.videoId, payload.videoPos);
+                if (payload.videoId !== "") {
+                    player.loadVideoById(payload.videoId, payload.videoPos);
+                }
                 if (payload.playbackState == YT.PlayerState.PAUSED) {
                     player.pauseVideo();
                 }
