@@ -21,7 +21,6 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer func() {
-		log.Println("Client disconnected")
 		if user != nil {
 			room.Leave(user)
 		}
@@ -55,17 +54,19 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 			log.Printf("Read error: %v", err)
 			return
 		}
+		room.Lock()
 		switch payload := message.Payload.(type) {
 		case msg.PlayMessage:
 			room.Play(user, payload.Position)
 		case msg.PauseMessage:
 			room.Pause(user, payload.Position)
-		case msg.LoadUrlMessage:
+		case msg.QueueUrlMessage:
 			if videoId, ok := youtube.ParseUrl(payload.Url); ok {
-				room.Load(videoId)
+				room.AddToQueue(videoId)
 			}
 		default:
 			room.Kick(user)
 		}
+		room.Unlock()
 	}
 }

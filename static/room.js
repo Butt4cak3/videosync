@@ -6,6 +6,8 @@ let syncing = false;
 let roomId;
 /** @type HTMLElement */
 let userlist;
+/** @type HTMLElement */
+let queuewrapper;
 
 document.addEventListener("DOMContentLoaded", () => {
     const input = document.getElementById("video_url_input");
@@ -15,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const usernameModal = document.getElementById("username_modal");
     const playerWrapper = document.getElementById("player_wrapper");
     userlist = document.getElementById("userlist");
+    queuewrapper = document.getElementById("queuewrapper");
 
     if (
         !(input instanceof HTMLInputElement) ||
@@ -29,12 +32,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
     input.addEventListener("keypress", (event) => {
         if (event.code === "Enter") {
-            playVideo(input.value);
+            queueVideo(input.value);
+            input.value = "";
         }
     });
 
     button.addEventListener("click", () => {
-        playVideo(input.value);
+        queueVideo(input.value);
+        input.value = "";
     });
 
     window.addEventListener("resize", () => {
@@ -73,10 +78,10 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-function playVideo(url) {
+function queueVideo(url) {
     ws.send(
         JSON.stringify({
-            type: "loadurl",
+            type: "queueurl",
             payload: {
                 url,
             },
@@ -213,6 +218,7 @@ async function initRoom(userName) {
                 if (payload.playbackState == YT.PlayerState.PAUSED) {
                     player.pauseVideo();
                 }
+                updateQueue(payload.queue);
                 serverState = {
                     state: payload.playbackState,
                     position: payload.videoPos,
@@ -243,6 +249,9 @@ async function initRoom(userName) {
                 break;
             case "leave":
                 removeUserNode(payload.userName);
+                break;
+            case "syncqueue":
+                updateQueue(payload.queue);
                 break;
         }
     });
@@ -298,4 +307,44 @@ function initUserlist(users) {
     for (const user of users) {
         addUserNode(user);
     }
+}
+
+function updateQueue(queue) {
+    queuewrapper.innerHTML = "";
+    if (queue.length === 0) {
+        queuewrapper.innerText = "The video queue is empty.";
+    }
+
+    for (const video of queue) {
+        const title = document.createElement("span");
+        title.classList.add("video_title");
+        title.innerText = video.title;
+
+        const duration = document.createElement("span");
+        duration.classList.add("video_duration");
+        duration.innerText = "(" + formatNanoseconds(video.duration) + ")";
+
+        const el = document.createElement("div");
+        el.classList.add("queue-video");
+        el.appendChild(title);
+        el.appendChild(duration);
+
+        queuewrapper.appendChild(el);
+    }
+}
+
+function formatNanoseconds(ns) {
+    let seconds = ns / 1_000_000_000;
+    const hours = Math.floor(seconds / 3600);
+    seconds -= hours * 3600;
+    const minutes = Math.floor(seconds / 60);
+    seconds -= minutes * 60;
+
+    let str = "";
+    if (hours > 0) {
+        str += hours.toString().padStart(2, "0") + ":";
+    }
+    str += minutes.toString().padStart(2, "0") + ":";
+    str += seconds.toString().padStart(2, "0");
+    return str;
 }

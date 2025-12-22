@@ -1,6 +1,9 @@
 package room
 
-import "time"
+import (
+	"time"
+	"videosync/media"
+)
 
 type PlaybackState int
 
@@ -12,11 +15,10 @@ const (
 )
 
 type Playback struct {
-	VideoId            string
+	Video              media.Video
 	State              PlaybackState
 	LatestPosition     float32
 	LatestPositionTime time.Time
-	Duration           float32
 }
 
 func (p Playback) Position() float32 {

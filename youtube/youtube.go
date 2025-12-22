@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"time"
+	"videosync/media"
 
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
@@ -26,20 +27,29 @@ func GetClient() (*youtube.Service, error) {
 	return client, nil
 }
 
-func GetVideoDuration(videoId string) (time.Duration, error) {
+func FetchVideoInfo(videoId string) (media.Video, error) {
 	client, err := GetClient()
 	if err != nil {
-		return 0, err
+		return media.Video{}, err
 	}
-	call := client.Videos.List([]string{"contentDetails"}).Id(videoId)
-	res, err := call.Do()
+	res, err := client.Videos.List([]string{"snippet", "contentDetails"}).Id(videoId).Do()
 	if err != nil {
-		return 0, err
+		return media.Video{}, err
 	}
 	if len(res.Items) == 0 {
-		return 0, fmt.Errorf("video id \"%s\" not found", videoId)
+		return media.Video{}, fmt.Errorf("video id \"%s\" not found", videoId)
 	}
-	return parseDuration(res.Items[0].ContentDetails.Duration)
+	item := res.Items[0]
+	duration, err := parseDuration(item.ContentDetails.Duration)
+	if err != nil {
+		return media.Video{}, fmt.Errorf("could not parse video duration \"%s\": %v", item.ContentDetails.Duration, err)
+	}
+	video := media.Video{
+		Id:       item.Id,
+		Title:    item.Snippet.Title,
+		Duration: duration,
+	}
+	return video, nil
 }
 
 func ParseUrl(url string) (string, bool) {

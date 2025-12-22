@@ -3,6 +3,7 @@ package room
 import (
 	"sync"
 	"time"
+	"videosync/media"
 	"videosync/message"
 	"videosync/youtube"
 )
@@ -13,6 +14,7 @@ type Room struct {
 	mu       sync.Mutex
 	playback Playback
 	stopSync chan bool
+	queue    []media.Video
 }
 
 func NewRoom(id string) *Room {
@@ -20,6 +22,7 @@ func NewRoom(id string) *Room {
 		Id:       id,
 		users:    make([]*User, 0, 2),
 		stopSync: make(chan bool),
+		queue:    make([]media.Video, 0),
 	}
 }
 
@@ -29,24 +32,22 @@ func (room *Room) SyncState() {
 	for {
 		select {
 		case <-ticker.C:
-			if room.playback.Position() > room.playback.Duration {
-				room.Load(room.playback.VideoId)
-				time.Sleep(time.Second)
-				room.Play(nil, 0)
+			room.Lock()
+			if room.playback.Position() > float32(room.playback.Video.Duration.Seconds()) {
+				room.LoadNext()
 			}
+			room.Unlock()
 		case <-room.stopSync:
 			return
 		}
 	}
 }
 
-func (room *Room) close() {
+func (room *Room) Close() {
 	room.stopSync <- true
 }
 
 func (room *Room) Join(user *User) {
-	room.mu.Lock()
-	defer room.mu.Unlock()
 	room.users = append(room.users, user)
 	users := make([]string, len(room.users))
 
@@ -57,10 +58,11 @@ func (room *Room) Join(user *User) {
 	user.Conn.WriteJSON(message.Message{
 		Type: message.Init,
 		Payload: message.InitMessage{
-			VideoId:       room.playback.VideoId,
+			VideoId:       room.playback.Video.Id,
 			VideoPos:      room.playback.Position(),
 			PlaybackState: int(room.playback.State),
 			Users:         users,
+			Queue:         room.queue,
 		},
 	})
 	room.Send(user, message.Message{
@@ -70,8 +72,6 @@ func (room *Room) Join(user *User) {
 }
 
 func (room *Room) Leave(user *User) {
-	room.mu.Lock()
-	defer room.mu.Unlock()
 	for i := range len(room.users) {
 		if room.users[i] == user {
 			room.users[i] = room.users[len(room.users)-1]
@@ -80,7 +80,7 @@ func (room *Room) Leave(user *User) {
 		}
 	}
 	if len(room.users) == 0 {
-		room.close()
+		room.Close()
 	}
 	room.Send(user, message.Message{
 		Type:    message.Leave,
@@ -89,8 +89,6 @@ func (room *Room) Leave(user *User) {
 }
 
 func (room *Room) Play(user *User, position float32) {
-	room.mu.Lock()
-	defer room.mu.Unlock()
 	room.playback.LatestPosition = position
 	room.playback.LatestPositionTime = time.Now()
 	room.playback.State = Playing
@@ -98,29 +96,45 @@ func (room *Room) Play(user *User, position float32) {
 }
 
 func (room *Room) Pause(user *User, position float32) {
-	room.mu.Lock()
-	defer room.mu.Unlock()
 	room.playback.LatestPosition = position
 	room.playback.LatestPositionTime = time.Now()
 	room.playback.State = Paused
 	room.Send(user, message.Message{Type: message.Pause, Payload: message.PauseMessage{Position: position}})
 }
 
-func (room *Room) Load(videoId string) {
-	room.mu.Lock()
-	defer room.mu.Unlock()
-	duration, err := youtube.GetVideoDuration(videoId)
-	if err != nil {
-		return
-	}
-
-	room.playback.VideoId = videoId
+func (room *Room) Load(video media.Video) {
+	room.playback.Video = video
 	room.playback.LatestPosition = 0
 	room.playback.LatestPositionTime = time.Now()
 	room.playback.State = Paused
-	room.playback.Duration = float32(duration.Seconds())
 
-	room.Send(nil, message.Message{Type: message.Load, Payload: message.LoadMessage{VideoId: videoId}})
+	room.Send(nil, message.Message{Type: message.Load, Payload: message.LoadMessage{VideoId: video.Id}})
+}
+
+func (room *Room) AddToQueue(videoId string) {
+	video, err := youtube.FetchVideoInfo(videoId)
+	if err != nil {
+		return
+	}
+	room.queue = append(room.queue, video)
+	if room.playback.Video.Id == "" {
+		room.LoadNext()
+	} else {
+		room.Send(nil, message.Message{Type: message.SyncQueue, Payload: message.SyncQueueMessage{Queue: room.queue}})
+	}
+}
+
+func (room *Room) LoadNext() {
+	if len(room.queue) == 0 {
+		room.playback = Playback{}
+		return
+	}
+	video := room.queue[0]
+	room.queue = room.queue[1:]
+	room.Send(nil, message.Message{Type: message.SyncQueue, Payload: message.SyncQueueMessage{Queue: room.queue}})
+	room.Load(video)
+	time.Sleep(time.Second)
+	room.Play(nil, 0)
 }
 
 func (room *Room) Kick(user *User) {
@@ -133,4 +147,12 @@ func (room *Room) Send(from *User, message message.Message) {
 			user.Conn.WriteJSON(message)
 		}
 	}
+}
+
+func (room *Room) Lock() {
+	room.mu.Lock()
+}
+
+func (room *Room) Unlock() {
+	room.mu.Unlock()
 }
