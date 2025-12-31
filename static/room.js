@@ -106,7 +106,8 @@ function createPlayer(width, height, events) {
 }
 
 function connectSocket(roomId) {
-    const ws = new WebSocket(`ws://${document.location.host}/socket/${roomId}`);
+    const proto = document.location.protocol === "https:" ? "wss" : "ws";
+    const ws = new WebSocket(`${proto}://${document.location.host}/socket/${roomId}`);
     return ws;
 }
 
