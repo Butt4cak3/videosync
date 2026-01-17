@@ -9,6 +9,7 @@ import (
 	"time"
 	"videosync/media"
 
+	"google.golang.org/api/googleapi"
 	"google.golang.org/api/option"
 	"google.golang.org/api/youtube/v3"
 )
@@ -32,7 +33,12 @@ func FetchVideoInfo(videoId string) (media.Video, error) {
 	if err != nil {
 		return media.Video{}, err
 	}
-	res, err := client.Videos.List([]string{"snippet", "contentDetails"}).Id(videoId).Do()
+	fields := []googleapi.Field{
+		"items/id",
+		"items/snippet(publishedAt,title,channelTitle,thumbnails(medium(url)))",
+		"items/contentDetails(duration)",
+	}
+	res, err := client.Videos.List([]string{"snippet", "contentDetails"}).Fields(fields...).Id(videoId).Do()
 	if err != nil {
 		return media.Video{}, err
 	}
@@ -45,9 +51,12 @@ func FetchVideoInfo(videoId string) (media.Video, error) {
 		return media.Video{}, fmt.Errorf("could not parse video duration \"%s\": %v", item.ContentDetails.Duration, err)
 	}
 	video := media.Video{
-		Id:       item.Id,
-		Title:    item.Snippet.Title,
-		Duration: duration,
+		Id:          item.Id,
+		Title:       item.Snippet.Title,
+		Duration:    duration,
+		Thumbnail:   item.Snippet.Thumbnails.Medium.Url,
+		Channel:     item.Snippet.ChannelTitle,
+		PublishedAt: item.Snippet.PublishedAt,
 	}
 	return video, nil
 }

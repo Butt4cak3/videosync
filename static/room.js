@@ -375,67 +375,122 @@ function updateQueue(queue) {
 
     for (let i = 0; i < queue.length; i++) {
         const video = queue[i];
-
-        const videoInfo = document.createElement("div");
-        const title = document.createElement("span");
-        title.classList.add("video_title");
-        title.innerText = video.title;
-        const duration = document.createElement("span");
-        duration.classList.add("video_duration");
-        duration.innerText = "(" + formatNanoseconds(video.duration) + ")";
-        videoInfo.appendChild(title);
-        videoInfo.appendChild(duration);
-
-        const el = document.createElement("div");
-        el.classList.add("queue-video");
-        el.appendChild(videoInfo);
-        addQueueOrderControls(el, queue.length, i);
-
+        const el = createQueueItem(queue, video, i);
         queuewrapper.appendChild(el);
     }
 }
 
+function createQueueItem(queue, video, index) {
+    const thumbnail = createThumbnail(video);
+
+    const info = createVideoInfo(video);
+
+    const el = document.createElement("div");
+    el.classList.add("queue-video");
+    el.appendChild(thumbnail);
+    el.appendChild(info);
+    addQueueOrderControls(el, queue.length, index);
+    return el;
+}
+
+function createThumbnail(video) {
+    const wrapper = document.createElement("div");
+    wrapper.classList.add("thumbnail-wrapper");
+
+    const image = document.createElement("img");
+    image.src = video.thumbnail;
+    image.classList.add("thumbnail");
+    wrapper.appendChild(image);
+
+    const duration = document.createElement("div");
+    duration.classList.add("video-duration");
+    duration.innerText = formatNanoseconds(video.duration);
+    wrapper.appendChild(duration);
+
+    return wrapper;
+}
+
+function createVideoInfo(video) {
+    const info = document.createElement("div");
+    info.classList.add("video-info");
+
+    const title = document.createElement("div");
+    title.classList.add("video-title");
+    title.innerText = video.title;
+    info.appendChild(title);
+
+    const channel = document.createElement("div");
+    channel.classList.add("channel-title");
+    channel.innerText = video.channel;
+    info.appendChild(channel);
+
+    const publishDate = new Date(video.publishedAt);
+    const publishedAt = document.createElement("div");
+    publishedAt.classList.add("published-at");
+    publishedAt.innerText = formatDate(publishDate);
+    info.appendChild(publishedAt);
+
+    return info;
+}
+
 function addQueueOrderControls(parent, queueLength, i) {
-    const controls = document.createElement("span");
+    const controls = document.createElement("div");
     controls.classList.add("queue-controls");
 
+    const a = document.createElement("div");
+    controls.appendChild(a);
+    const b = document.createElement("div");
+    controls.appendChild(b);
+    const c = document.createElement("div");
+    controls.appendChild(c);
+
     const toTop = document.createElement("button");
+    toTop.classList.add("up-arrow");
     toTop.innerText = "⇈";
     toTop.title = "Move to top";
     toTop.disabled = i === 0;
     toTop.addEventListener("click", () => reorderQueue(i, 0));
+    b.appendChild(toTop);
 
     const up = document.createElement("button");
+    up.classList.add("up-arrow");
     up.innerText = "↑";
     up.title = "Move up";
     up.disabled = i === 0;
     up.addEventListener("click", () => reorderQueue(i, i - 1));
+    a.appendChild(up);
 
     const down = document.createElement("button");
+    down.classList.add("down-arrow");
     down.innerText = "↓";
     down.title = "Move down";
     down.disabled = i === queueLength - 1;
     down.addEventListener("click", () => reorderQueue(i, i + 1));
+    a.appendChild(down);
 
     const toBottom = document.createElement("button");
+    toBottom.classList.add("down-arrow");
     toBottom.innerText = "⇊";
     toBottom.title = "Move to bottom";
     toBottom.disabled = i === queueLength - 1;
     toBottom.addEventListener("click", () => reorderQueue(i, queueLength - 1));
+    b.appendChild(toBottom);
 
     const remove = document.createElement("button");
     remove.innerText = "⨯";
     remove.title = "Remove from queue";
     remove.classList.add("destructive");
     remove.addEventListener("click", () => removeFromQueue(i));
-
-    controls.appendChild(toTop);
-    controls.appendChild(up);
-    controls.appendChild(down);
-    controls.appendChild(toBottom);
-    controls.appendChild(remove);
+    c.appendChild(remove);
 
     parent.appendChild(controls);
+}
+
+function formatDate(date) {
+    const year = date.getFullYear().toString();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    return `${year}-${month}-${day}`;
 }
 
 function formatNanoseconds(ns) {

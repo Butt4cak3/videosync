@@ -3,7 +3,10 @@ package media
 import "time"
 
 type Video struct {
-	Id       string        `json:"id"`
-	Title    string        `json:"title"`
-	Duration time.Duration `json:"duration"`
+	Id          string        `json:"id"`
+	Title       string        `json:"title"`
+	Duration    time.Duration `json:"duration"`
+	Thumbnail   string        `json:"thumbnail"`
+	Channel     string        `json:"channel"`
+	PublishedAt string        `json:"publishedAt"`
 }
