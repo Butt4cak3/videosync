@@ -430,6 +430,11 @@ function createVideoInfo(video) {
     publishedAt.innerText = formatDate(publishDate);
     info.appendChild(publishedAt);
 
+    const queuedBy = document.createElement("div");
+    queuedBy.classList.add("queued-by");
+    queuedBy.innerText = "Queued by: " + video.queuedBy;
+    info.appendChild(queuedBy);
+
     return info;
 }
 
