@@ -62,7 +62,7 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 			room.Pause(user, payload.Position)
 		case msg.QueueUrlMessage:
 			if videoId, ok := youtube.ParseUrl(payload.Url); ok {
-				room.AddToQueue(videoId)
+				room.AddToQueue(user, videoId)
 			}
 		case msg.ReorderQueueMessage:
 			room.ReorderQueue(payload.From, payload.To)

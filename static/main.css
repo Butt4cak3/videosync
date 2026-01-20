@@ -111,6 +111,7 @@ button:disabled {
     flex-direction: row;
     justify-content: space-between;
     margin-bottom: 0.5em;
+
     &:last-child {
         margin-bottom: 0;
     }
@@ -159,6 +160,11 @@ button:disabled {
 .published-at {
     font-size: 0.8em;
     color: var(--color-subtext-0);
+}
+
+.queued-by {
+    font-size: 0.6em;
+    color: var(--color-surface-2);
 }
 
 .queue-controls {
