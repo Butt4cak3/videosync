@@ -194,3 +194,9 @@ button:disabled {
         border-top-right-radius: 0;
     }
 }
+
+.sidebar {
+    flex: 0 0 12em;
+    margin: 0 2em;
+    overflow: hidden;
+}

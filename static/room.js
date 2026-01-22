@@ -42,6 +42,7 @@ async function init() {
     const usernameButton = document.getElementById("submit_username_button");
     const usernameModal = document.getElementById("username_modal");
     const playerWrapper = document.getElementById("player_wrapper");
+    const changeNameButton = document.getElementById("change_name_button");
     userlist = document.getElementById("userlist");
     queuewrapper = document.getElementById("queuewrapper");
 
@@ -52,7 +53,8 @@ async function init() {
         !(usernameInput instanceof HTMLInputElement) ||
         !(usernameButton instanceof HTMLButtonElement) ||
         !(usernameModal instanceof HTMLElement) ||
-        !(playerWrapper instanceof HTMLElement)
+        !(playerWrapper instanceof HTMLElement) ||
+        !(changeNameButton instanceof HTMLButtonElement)
     ) {
         return;
     }
@@ -84,7 +86,6 @@ async function init() {
     if (cachedUsername) {
         usernameModal.style.display = "none";
         initPlayer(cachedUsername);
-        return;
     }
 
     const submitUsername = (userName) => {
@@ -106,6 +107,11 @@ async function init() {
         if (event.code === "Enter") {
             submitUsername(usernameInput.value);
         }
+    });
+
+    changeNameButton.addEventListener("click", () => {
+        localStorage.removeItem("username");
+        window.location.reload();
     });
 }
 
