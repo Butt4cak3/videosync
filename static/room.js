@@ -13,6 +13,10 @@ let userlistMobile;
 let queuewrapper;
 /** @type HTMLElement */
 let playerWrapper;
+/** @type HTMLElement */
+let currentVideoInfoPanel;
+/** @type HTMLElement */
+let currentVideoInfoPanelMobile;
 
 const youtubeApiPromise = new Promise((resolve, _reject) => {
     window.onYouTubePlayerAPIReady = () => {
@@ -54,6 +58,10 @@ async function init() {
     userlist = document.getElementById("userlist");
     userlistMobile = document.getElementById("userlist_mobile");
     queuewrapper = document.getElementById("queuewrapper");
+    currentVideoInfoPanel = document.getElementById("current_video_info_panel");
+    currentVideoInfoPanelMobile = document.getElementById(
+        "current_video_info_panel_mobile",
+    );
 
     if (
         !(input instanceof HTMLInputElement) ||
@@ -203,8 +211,12 @@ async function initPlayer(userName) {
         const { type, payload } = JSON.parse(event.data);
         switch (type) {
             case "init":
-                if (payload.videoId !== "") {
-                    player.loadVideoById(payload.videoId, payload.videoPos);
+                if (payload.currentVideo.id !== "") {
+                    player.loadVideoById(
+                        payload.currentVideo.id,
+                        payload.videoPos,
+                    );
+                    updateCurrentVideoInfo(payload.currentVideo);
                 }
                 if (payload.playbackState == YT.PlayerState.PAUSED) {
                     player.pauseVideo();
@@ -229,11 +241,12 @@ async function initPlayer(userName) {
                 });
                 break;
             case "load":
-                player.loadVideoById(payload.videoId, 0);
+                player.loadVideoById(payload.video.id, 0);
                 updatePlayerState({
                     state: YT.PlayerState.PAUSED,
                     position: 0,
                 });
+                updateCurrentVideoInfo(payload.video);
                 break;
             case "join":
                 addUserNode(payload.userName);
@@ -342,6 +355,11 @@ function connectSocket() {
     return ws;
 }
 
+function updateCurrentVideoInfo(video) {
+    currentVideoInfoPanel.replaceChildren(createCurrentVideoInfo(video));
+    currentVideoInfoPanelMobile.replaceChildren(createCurrentVideoInfo(video));
+}
+
 function updatePlayerState(newState) {
     serverState = { ...newState };
 
@@ -371,7 +389,7 @@ function calculatePlayerSize() {
     const spacing = 158;
 
     let width;
-    if (vw < 1200) {
+    if (vw < 1360) {
         width = Number.parseFloat(getComputedStyle(main).width);
     } else {
         width = Math.floor(Math.min(vw * 0.75, 1920));
@@ -448,6 +466,16 @@ function updateQueue(queue) {
         const el = createQueueItem(queue, video, i);
         queuewrapper.appendChild(el);
     }
+}
+
+function createCurrentVideoInfo(video) {
+    const thumbnail = createThumbnail(video);
+    const info = createVideoInfo(video);
+    const el = document.createElement("div");
+    el.classList.add("current-video-info");
+    el.appendChild(thumbnail);
+    el.appendChild(info);
+    return el;
 }
 
 function createQueueItem(queue, video, index) {
