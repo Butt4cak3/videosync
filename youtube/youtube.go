@@ -3,8 +3,8 @@ package youtube
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
-	"regexp"
 	"strings"
 	"time"
 	"videosync/media"
@@ -61,14 +61,19 @@ func FetchVideoInfo(videoId string) (media.Video, error) {
 	return video, nil
 }
 
-func ParseUrl(url string) (string, bool) {
-	re := regexp.MustCompile("v=([^&]+)")
-	match := re.FindStringSubmatch(url)
-	if match == nil {
+func ParseUrl(urlString string) (string, bool) {
+	u, err := url.Parse(urlString)
+	if err != nil {
 		return "", false
 	}
-
-	return match[1], true
+	q := u.Query()
+	if (u.Host == "youtube.com" || u.Host == "www.youtube.com") && u.Path == "/watch" && q.Has("v") {
+		return q.Get("v"), true
+	} else if u.Host == "youtu.be" {
+		return u.Path[1:], true
+	} else {
+		return "", false
+	}
 }
 
 func parseDuration(ytDuration string) (time.Duration, error) {
