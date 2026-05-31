@@ -138,7 +138,7 @@ func (room *Room) LoadNext() {
 	room.Send(nil, message.Message{Type: message.SyncQueue, Payload: message.SyncQueueMessage{Queue: room.queue}})
 	room.Load(video)
 	time.Sleep(time.Second)
-	room.Play(nil, 0)
+	room.Play(nil, video.Position)
 }
 
 func (room *Room) SwapVideo(queueIndex int) {
@@ -147,6 +147,7 @@ func (room *Room) SwapVideo(queueIndex int) {
 	}
 	selected := room.queue[queueIndex]
 	previous := room.playback.Video
+	previous.Position = room.playback.Position()
 
 	room.queue = append(room.queue[:queueIndex], room.queue[queueIndex+1:]...)
 	room.queue = append([]media.Video{selected, previous}, room.queue...)
