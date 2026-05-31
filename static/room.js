@@ -537,11 +537,15 @@ function createVideoInfo(video) {
     channel.innerText = video.channel;
     info.appendChild(channel);
 
+    const viewsAndPublishedAt = document.createElement("div");
+    viewsAndPublishedAt.classList.add("meta-inline");
+
+    const viewText = abbreviateViews(video.views) + " views";
     const publishDate = new Date(video.publishedAt);
-    const publishedAt = document.createElement("div");
-    publishedAt.classList.add("published-at");
-    publishedAt.innerText = formatDate(publishDate);
-    info.appendChild(publishedAt);
+    const dateText = formatDate(publishDate);
+
+    viewsAndPublishedAt.innerText = `${viewText} • ${dateText}`;
+    info.appendChild(viewsAndPublishedAt);
 
     const queuedBy = document.createElement("div");
     queuedBy.classList.add("queued-by");
@@ -634,4 +638,15 @@ function formatNanoseconds(ns) {
     str += minutes.toString().padStart(2, "0") + ":";
     str += seconds.toString().padStart(2, "0");
     return str;
+}
+
+function roundTo(num, decimals) {
+    const factor = Math.pow(10, decimals);
+    return Math.round(num * factor) / factor;
+}
+
+function abbreviateViews(n) {
+    if (n >= 1_000_000) return roundTo(n / 1_000_000, 1) + "M";
+    if (n >= 1_000) return roundTo(n / 1_000, 1) + "K";
+    return String(n);
 }
