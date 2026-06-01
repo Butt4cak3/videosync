@@ -69,13 +69,21 @@ func ParseUrl(urlString string) (string, bool) {
 		return "", false
 	}
 	q := u.Query()
-	if (u.Host == "youtube.com" || u.Host == "www.youtube.com") && u.Path == "/watch" && q.Has("v") {
-		return q.Get("v"), true
-	} else if u.Host == "youtu.be" {
+	switch u.Host {
+	case "youtube.com", "www.youtube.com", "m.youtube.com":
+		if u.Path == "/watch" && q.Has("v") {
+			return q.Get("v"), true
+		} else if strings.HasPrefix(u.Path, "/watch/") {
+			return u.Path[7:], true
+		} else if strings.HasPrefix(u.Path, "/v/") {
+			return u.Path[3:], true
+		} else if strings.HasPrefix(u.Path, "/shorts/") {
+			return u.Path[8:], true
+		}
+	case "youtu.be":
 		return u.Path[1:], true
-	} else {
-		return "", false
 	}
+	return "", false
 }
 
 func parseDuration(ytDuration string) (time.Duration, error) {
