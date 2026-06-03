@@ -495,9 +495,7 @@ function createCurrentVideoInfo(video) {
 
 function createQueueItem(queue, video, index) {
     const thumbnail = createThumbnail(video);
-
     const info = createVideoInfo(video);
-
     const el = document.createElement("div");
     el.classList.add("queue-video");
     el.appendChild(thumbnail);
