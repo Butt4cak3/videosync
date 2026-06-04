@@ -19,7 +19,7 @@ func TestUrlParsing(t *testing.T) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if strings.TrimSpace(line) != "" {
-			_, ok := ParseUrl(line)
+			_, _, ok := ParseUrl(line)
 			if !ok {
 				t.Errorf("%s could not be parsed as a valid YouTube URL", line)
 			}

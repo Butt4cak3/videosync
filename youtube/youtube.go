@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 	"videosync/media"
@@ -63,27 +64,42 @@ func FetchVideoInfo(videoId string) (media.Video, error) {
 	return video, nil
 }
 
-func ParseUrl(urlString string) (string, bool) {
-	u, err := url.Parse(urlString)
+func ParseUrl(urlString string) (videoId string, timestamp string, ok bool) {
+	parsedUrl, err := url.Parse(urlString)
 	if err != nil {
-		return "", false
+		return
 	}
-	q := u.Query()
-	switch u.Host {
+
+	path := parsedUrl.Path
+	query := parsedUrl.Query()
+	timestamp = query.Get("t")
+
+	switch parsedUrl.Host {
 	case "youtube.com", "www.youtube.com", "m.youtube.com":
-		if u.Path == "/watch" && q.Has("v") {
-			return q.Get("v"), true
-		} else if strings.HasPrefix(u.Path, "/watch/") {
-			return u.Path[7:], true
-		} else if strings.HasPrefix(u.Path, "/v/") {
-			return u.Path[3:], true
-		} else if strings.HasPrefix(u.Path, "/shorts/") {
-			return u.Path[8:], true
+		if path == "/watch" && query.Has("v") {
+			videoId = query.Get("v")
+		} else if strings.HasPrefix(path, "/watch/") {
+			videoId = path[7:]
+		} else if strings.HasPrefix(path, "/v/") {
+			videoId = path[3:]
+		} else if strings.HasPrefix(path, "/shorts/") {
+			videoId = path[8:]
 		}
 	case "youtu.be":
-		return u.Path[1:], true
+		videoId = path[1:]
 	}
-	return "", false
+
+	return videoId, timestamp, videoId != ""
+}
+
+func ParseTimestamp(timestamp string) float32 {
+	if seconds, err := strconv.ParseFloat(timestamp, 32); err == nil {
+		return float32(seconds)
+	}
+	if duration, err := time.ParseDuration(timestamp); err == nil {
+		return float32(duration.Seconds())
+	}
+	return 0.0
 }
 
 func parseDuration(ytDuration string) (time.Duration, error) {

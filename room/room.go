@@ -112,12 +112,20 @@ func (room *Room) Load(video media.Video) {
 }
 
 func (room *Room) AddToQueue(user *User, videoId string) {
+	videoId, timestamp, ok := youtube.ParseUrl(videoId)
+	if !ok {
+		return
+	}
+
 	video, err := youtube.FetchVideoInfo(videoId)
 	if err != nil {
 		return
 	}
+
+	video.Position = youtube.ParseTimestamp(timestamp)
 	video.QueuedBy = user.Name
 	room.queue = append(room.queue, video)
+
 	if room.playback.Video.Id == "" {
 		room.LoadNext()
 	} else {
