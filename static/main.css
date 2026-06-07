@@ -57,31 +57,6 @@ body {
     margin-top: 0.5em;
 }
 
-@media (min-width: 1365px) {
-    .layout {
-        flex-direction: row;
-        align-items: flex-start;
-    }
-
-    .main {
-        margin-right: 0;
-        flex: 0 0 auto;
-        width: fit-content;
-    }
-
-    .sidebar {
-        display: block;
-        margin: 0 2em;
-        flex: 1 1 12em;
-        overflow: hidden;
-    }
-
-    .mobile-sidebar-header,
-    .mobile-sidebar-userlist {
-        display: none;
-    }
-}
-
 input[type="text"] {
     font-size: 1em;
     background-color: var(--color-base);
@@ -300,5 +275,34 @@ button {
     .down-arrow {
         border-top-left-radius: 0;
         border-top-right-radius: 0;
+    }
+}
+
+@media (min-width: 1365px) {
+    .layout {
+        flex-direction: row;
+        align-items: flex-start;
+    }
+
+    .main {
+        margin-right: 0;
+        flex: 0 0 auto;
+        width: fit-content;
+    }
+
+    .sidebar {
+        display: block;
+        margin: 0 2em;
+        flex: 1 1 12em;
+        overflow: hidden;
+    }
+
+    .mobile-sidebar-header,
+    .mobile-sidebar-userlist {
+        display: none;
+    }
+
+    .current-video-info {
+        flex-direction: column;
     }
 }
