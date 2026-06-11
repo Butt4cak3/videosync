@@ -3,8 +3,9 @@ package youtube
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
-	"regexp"
+	"strconv"
 	"strings"
 	"time"
 	"videosync/media"
@@ -37,8 +38,9 @@ func FetchVideoInfo(videoId string) (media.Video, error) {
 		"items/id",
 		"items/snippet(publishedAt,title,channelTitle,thumbnails(medium(url)))",
 		"items/contentDetails(duration)",
+		"items/statistics(viewCount)",
 	}
-	res, err := client.Videos.List([]string{"snippet", "contentDetails"}).Fields(fields...).Id(videoId).Do()
+	res, err := client.Videos.List([]string{"snippet", "contentDetails", "statistics"}).Fields(fields...).Id(videoId).Do()
 	if err != nil {
 		return media.Video{}, err
 	}
@@ -57,18 +59,47 @@ func FetchVideoInfo(videoId string) (media.Video, error) {
 		Thumbnail:   item.Snippet.Thumbnails.Medium.Url,
 		Channel:     item.Snippet.ChannelTitle,
 		PublishedAt: item.Snippet.PublishedAt,
+		Views:       item.Statistics.ViewCount,
 	}
 	return video, nil
 }
 
-func ParseUrl(url string) (string, bool) {
-	re := regexp.MustCompile("v=([^&]+)")
-	match := re.FindStringSubmatch(url)
-	if match == nil {
-		return "", false
+func ParseUrl(urlString string) (videoId string, timestamp string, ok bool) {
+	parsedUrl, err := url.Parse(urlString)
+	if err != nil {
+		return
 	}
 
-	return match[1], true
+	path := parsedUrl.Path
+	query := parsedUrl.Query()
+	timestamp = query.Get("t")
+
+	switch parsedUrl.Host {
+	case "youtube.com", "www.youtube.com", "m.youtube.com":
+		if path == "/watch" && query.Has("v") {
+			videoId = query.Get("v")
+		} else if strings.HasPrefix(path, "/watch/") {
+			videoId = path[7:]
+		} else if strings.HasPrefix(path, "/v/") {
+			videoId = path[3:]
+		} else if strings.HasPrefix(path, "/shorts/") {
+			videoId = path[8:]
+		}
+	case "youtu.be":
+		videoId = path[1:]
+	}
+
+	return videoId, timestamp, videoId != ""
+}
+
+func ParseTimestamp(timestamp string) float32 {
+	if seconds, err := strconv.ParseFloat(timestamp, 32); err == nil {
+		return float32(seconds)
+	}
+	if duration, err := time.ParseDuration(timestamp); err == nil {
+		return float32(duration.Seconds())
+	}
+	return 0.0
 }
 
 func parseDuration(ytDuration string) (time.Duration, error) {

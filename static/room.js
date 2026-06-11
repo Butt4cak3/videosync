@@ -47,6 +47,9 @@ async function init() {
     const main = document.getElementById("main");
     const input = document.getElementById("video_url_input");
     const queueButton = document.getElementById("add_to_queue_button");
+    const queueWithTimestampButton = document.getElementById(
+        "add_to_queue_with_timestamp_button",
+    );
     const skipButton = document.getElementById("skip_button");
     const usernameInput = document.getElementById("username_input");
     const usernameButton = document.getElementById("submit_username_button");
@@ -67,6 +70,7 @@ async function init() {
     if (
         !(input instanceof HTMLInputElement) ||
         !(queueButton instanceof HTMLButtonElement) ||
+        !(queueWithTimestampButton instanceof HTMLButtonElement) ||
         !(skipButton instanceof HTMLButtonElement) ||
         !(usernameInput instanceof HTMLInputElement) ||
         !(usernameButton instanceof HTMLButtonElement) ||
@@ -88,6 +92,11 @@ async function init() {
 
     queueButton.addEventListener("click", () => {
         queueVideo(input.value);
+        input.value = "";
+    });
+
+    queueWithTimestampButton.addEventListener("click", () => {
+        queueVideo(input.value, true);
         input.value = "";
     });
 
@@ -296,12 +305,13 @@ function getRoomId() {
     return match[1];
 }
 
-function queueVideo(url) {
+function queueVideo(url, useTimestamp = false) {
     ws.send(
         JSON.stringify({
             type: "queueurl",
             payload: {
                 url,
+                useTimestamp,
             },
         }),
     );
@@ -495,9 +505,7 @@ function createCurrentVideoInfo(video) {
 
 function createQueueItem(queue, video, index) {
     const thumbnail = createThumbnail(video);
-
     const info = createVideoInfo(video);
-
     const el = document.createElement("div");
     el.classList.add("queue-video");
     el.appendChild(thumbnail);
@@ -514,6 +522,13 @@ function createThumbnail(video) {
     image.src = video.thumbnail;
     image.classList.add("thumbnail");
     wrapper.appendChild(image);
+
+    if (video.position !== null && video.position > 1) {
+        const position = document.createElement("div");
+        position.className = "video-position";
+        position.innerText = "⯈ " + formatSeconds(video.position);
+        wrapper.appendChild(position);
+    }
 
     const duration = document.createElement("div");
     duration.classList.add("video-duration");
@@ -542,11 +557,15 @@ function createVideoInfo(video) {
     channel.innerText = video.channel;
     info.appendChild(channel);
 
+    const viewsAndPublishedAt = document.createElement("div");
+    viewsAndPublishedAt.classList.add("meta-inline");
+
+    const viewText = abbreviateViews(video.views) + " views";
     const publishDate = new Date(video.publishedAt);
-    const publishedAt = document.createElement("div");
-    publishedAt.classList.add("published-at");
-    publishedAt.innerText = formatDate(publishDate);
-    info.appendChild(publishedAt);
+    const dateText = formatDate(publishDate);
+
+    viewsAndPublishedAt.innerText = `${viewText} • ${dateText}`;
+    info.appendChild(viewsAndPublishedAt);
 
     const queuedBy = document.createElement("div");
     queuedBy.classList.add("queued-by");
@@ -627,6 +646,12 @@ function formatDate(date) {
 
 function formatNanoseconds(ns) {
     let seconds = ns / 1_000_000_000;
+    return formatSeconds(seconds);
+}
+
+function formatSeconds(s) {
+    // output is in mm:ss or hh:mm:ss if seconds are more than 1 hour
+    let seconds = Math.floor(s);
     const hours = Math.floor(seconds / 3600);
     seconds -= hours * 3600;
     const minutes = Math.floor(seconds / 60);
@@ -639,4 +664,15 @@ function formatNanoseconds(ns) {
     str += minutes.toString().padStart(2, "0") + ":";
     str += seconds.toString().padStart(2, "0");
     return str;
+}
+
+function roundTo(num, decimals) {
+    const factor = Math.pow(10, decimals);
+    return Math.round(num * factor) / factor;
+}
+
+function abbreviateViews(n) {
+    if (n >= 1_000_000) return roundTo(n / 1_000_000, 1) + "M";
+    if (n >= 1_000) return roundTo(n / 1_000, 1) + "K";
+    return String(n);
 }

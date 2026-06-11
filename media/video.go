@@ -7,8 +7,10 @@ type Video struct {
 	Url         string        `json:"url"`
 	Title       string        `json:"title"`
 	Duration    time.Duration `json:"duration"`
+	Position    float32       `json:"position"`
 	Thumbnail   string        `json:"thumbnail"`
 	Channel     string        `json:"channel"`
 	PublishedAt string        `json:"publishedAt"`
+	Views       uint64        `json:"views"`
 	QueuedBy    string        `json:"queuedBy"`
 }
