@@ -111,7 +111,7 @@ func (room *Room) Load(video media.Video) {
 	room.Send(nil, message.Message{Type: message.Load, Payload: message.LoadMessage{Video: video}})
 }
 
-func (room *Room) AddToQueue(user *User, url string) {
+func (room *Room) AddToQueue(user *User, url string, useTimestamp bool) {
 	videoId, timestamp, ok := youtube.ParseUrl(url)
 	if !ok {
 		return
@@ -122,7 +122,9 @@ func (room *Room) AddToQueue(user *User, url string) {
 		return
 	}
 
-	video.Position = youtube.ParseTimestamp(timestamp)
+	if useTimestamp {
+		video.Position = youtube.ParseTimestamp(timestamp)
+	}
 	video.QueuedBy = user.Name
 	room.queue = append(room.queue, video)
 

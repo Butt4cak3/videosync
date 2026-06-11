@@ -60,7 +60,7 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 		case msg.PauseMessage:
 			room.Pause(user, payload.Position)
 		case msg.QueueUrlMessage:
-			room.AddToQueue(user, payload.Url)
+			room.AddToQueue(user, payload.Url, payload.UseTimestamp)
 		case msg.ReorderQueueMessage:
 			room.ReorderQueue(payload.From, payload.To)
 		case msg.RemoveFromQueueMessage:
