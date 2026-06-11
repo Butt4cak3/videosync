@@ -6,7 +6,6 @@ import (
 	"sync/atomic"
 	msg "videosync/message"
 	rooms "videosync/room"
-	"videosync/youtube"
 )
 
 var nextClientId atomic.Int32
@@ -61,9 +60,7 @@ func handleRoomSocket(w http.ResponseWriter, r *http.Request) {
 		case msg.PauseMessage:
 			room.Pause(user, payload.Position)
 		case msg.QueueUrlMessage:
-			if videoId, ok := youtube.ParseUrl(payload.Url); ok {
-				room.AddToQueue(user, videoId)
-			}
+			room.AddToQueue(user, payload.Url, payload.UseTimestamp)
 		case msg.ReorderQueueMessage:
 			room.ReorderQueue(payload.From, payload.To)
 		case msg.RemoveFromQueueMessage:

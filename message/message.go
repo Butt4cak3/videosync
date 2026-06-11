@@ -50,7 +50,8 @@ type LoadMessage struct {
 }
 
 type QueueUrlMessage struct {
-	Url string `json:"url"`
+	Url          string `json:"url"`
+	UseTimestamp bool   `json:"useTimestamp"`
 }
 
 type IntroduceMessage struct {
@@ -71,7 +72,7 @@ type SyncQueueMessage struct {
 
 type SkipVideoMessage struct{}
 
-type SwapVideoMessage struct{
+type SwapVideoMessage struct {
 	QueueIndex int `json:"queueIndex"`
 }
 

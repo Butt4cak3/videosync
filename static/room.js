@@ -47,6 +47,9 @@ async function init() {
     const main = document.getElementById("main");
     const input = document.getElementById("video_url_input");
     const queueButton = document.getElementById("add_to_queue_button");
+    const queueWithTimestampButton = document.getElementById(
+        "add_to_queue_with_timestamp_button",
+    );
     const skipButton = document.getElementById("skip_button");
     const usernameInput = document.getElementById("username_input");
     const usernameButton = document.getElementById("submit_username_button");
@@ -67,6 +70,7 @@ async function init() {
     if (
         !(input instanceof HTMLInputElement) ||
         !(queueButton instanceof HTMLButtonElement) ||
+        !(queueWithTimestampButton instanceof HTMLButtonElement) ||
         !(skipButton instanceof HTMLButtonElement) ||
         !(usernameInput instanceof HTMLInputElement) ||
         !(usernameButton instanceof HTMLButtonElement) ||
@@ -88,6 +92,11 @@ async function init() {
 
     queueButton.addEventListener("click", () => {
         queueVideo(input.value);
+        input.value = "";
+    });
+
+    queueWithTimestampButton.addEventListener("click", () => {
+        queueVideo(input.value, true);
         input.value = "";
     });
 
@@ -296,12 +305,13 @@ function getRoomId() {
     return match[1];
 }
 
-function queueVideo(url) {
+function queueVideo(url, useTimestamp = false) {
     ws.send(
         JSON.stringify({
             type: "queueurl",
             payload: {
                 url,
+                useTimestamp,
             },
         }),
     );
