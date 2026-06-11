@@ -4,6 +4,7 @@ import "time"
 
 type Video struct {
 	Id          string        `json:"id"`
+	Url         string        `json:"url"`
 	Title       string        `json:"title"`
 	Duration    time.Duration `json:"duration"`
 	Position    float32       `json:"position"`

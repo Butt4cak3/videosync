@@ -544,7 +544,12 @@ function createVideoInfo(video) {
 
     const title = document.createElement("div");
     title.classList.add("video-title");
-    title.innerText = video.title;
+    const link = document.createElement("a");
+    link.classList.add("plain-link");
+    link.href = video.url;
+    link.target = "_blank";
+    link.innerText = video.title;
+    title.appendChild(link);
     info.appendChild(title);
 
     const channel = document.createElement("div");

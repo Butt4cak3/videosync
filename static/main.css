@@ -132,6 +132,15 @@ button {
     }
 }
 
+.plain-link {
+    color: inherit;
+    text-decoration: none;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
 #yt_player {
     border-radius: 12px;
 }
