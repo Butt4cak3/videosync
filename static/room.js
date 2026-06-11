@@ -530,6 +530,7 @@ function createVideoInfo(video) {
     const title = document.createElement("div");
     title.classList.add("video-title");
     const link = document.createElement("a");
+    link.classList.add("plain-link");
     link.href = video.url;
     link.target = "_blank";
     link.innerText = video.title;

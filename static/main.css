@@ -157,7 +157,7 @@ button {
     }
 }
 
-a {
+.plain-link {
     color: inherit;
     text-decoration: none;
 
