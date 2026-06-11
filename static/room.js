@@ -89,6 +89,7 @@ async function init() {
         if (event.code === "Enter") {
             queueVideo(input.value);
             input.value = "";
+            queueWithTimestampButton.remove();
         }
     });
 
@@ -110,11 +111,13 @@ async function init() {
     queueButton.addEventListener("click", () => {
         queueVideo(input.value);
         input.value = "";
+        queueWithTimestampButton.remove();
     });
 
     queueWithTimestampButton.addEventListener("click", () => {
         queueVideo(input.value, true);
         input.value = "";
+        queueWithTimestampButton.remove();
     });
 
     skipButton.addEventListener("click", () => {
