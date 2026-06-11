@@ -125,7 +125,7 @@ func (room *Room) AddToQueue(user *User, url string, useTimestamp bool) {
 	video.Url = url
 
 	if useTimestamp {
-		video.Position = youtube.ParseTimestamp(timestamp)
+		video.Position = timestamp
 	}
 	video.QueuedBy = user.Name
 	room.queue = append(room.queue, video)

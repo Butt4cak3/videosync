@@ -64,7 +64,7 @@ func FetchVideoInfo(videoId string) (media.Video, error) {
 	return video, nil
 }
 
-func ParseUrl(urlString string) (videoId string, timestamp string, ok bool) {
+func ParseUrl(urlString string) (videoId string, timestamp float32, ok bool) {
 	parsedUrl, err := url.Parse(urlString)
 	if err != nil {
 		return
@@ -72,7 +72,7 @@ func ParseUrl(urlString string) (videoId string, timestamp string, ok bool) {
 
 	path := parsedUrl.Path
 	query := parsedUrl.Query()
-	timestamp = query.Get("t")
+	timestamp = parseTimestamp(query.Get("t"))
 
 	switch parsedUrl.Host {
 	case "youtube.com", "www.youtube.com", "m.youtube.com":
@@ -92,7 +92,7 @@ func ParseUrl(urlString string) (videoId string, timestamp string, ok bool) {
 	return videoId, timestamp, videoId != ""
 }
 
-func ParseTimestamp(timestamp string) float32 {
+func parseTimestamp(timestamp string) float32 {
 	if seconds, err := strconv.ParseFloat(timestamp, 32); err == nil {
 		return float32(seconds)
 	}
