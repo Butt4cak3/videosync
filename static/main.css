@@ -32,8 +32,29 @@ body {
         width: 100%;
         max-width: 100%;
         display: flex;
-        gap: 0.5rem;
         align-items: center;
+
+        --button-radius: 0.5em;
+
+        .queue-buttons {
+            display: flex;
+            flex-direction: row;
+        }
+
+        button {
+            border-radius: 0;
+        }
+
+        button:first-of-type {
+            border-top-left-radius: var(--button-radius);
+            border-bottom-left-radius: var(--button-radius);
+        }
+
+        button:last-of-type {
+            border-top-right-radius: var(--button-radius);
+            border-bottom-right-radius: var(--button-radius);
+            border-left: 1px solid var(--color-overlay-0);
+        }
     }
 }
 
@@ -49,7 +70,9 @@ body {
 .video-url-input {
     flex: 1 1 auto;
     min-width: 0;
+    margin-right: 0.5rem;
 }
+
 .mobile-userlist {
     padding: 1em;
     background-color: var(--color-bg-1);

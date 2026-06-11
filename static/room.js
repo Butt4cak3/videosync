@@ -83,10 +83,27 @@ async function init() {
         return;
     }
 
+    queueWithTimestampButton.remove();
+
     input.addEventListener("keypress", (event) => {
         if (event.code === "Enter") {
             queueVideo(input.value);
             input.value = "";
+        }
+    });
+
+    input.addEventListener("input", (event) => {
+        try {
+            const url = new URL(input.value);
+            const timestamp = url.searchParams.get("t");
+            if (timestamp) {
+                queueButton.parentNode.appendChild(queueWithTimestampButton);
+                queueWithTimestampButton.innerText = `Start at ${formatTimestamp(timestamp)}`;
+            } else {
+                queueWithTimestampButton.remove();
+            }
+        } catch (e) {
+            queueWithTimestampButton.remove();
         }
     });
 
@@ -675,4 +692,28 @@ function abbreviateViews(n) {
     if (n >= 1_000_000) return roundTo(n / 1_000_000, 1) + "M";
     if (n >= 1_000) return roundTo(n / 1_000, 1) + "K";
     return String(n);
+}
+
+function formatTimestamp(timestamp) {
+    const isInt = timestamp.match(/^\d+$/) !== null;
+
+    if (isInt) {
+        return formatSeconds(parseInt(timestamp));
+    } else {
+        const seconds = parseDuration(timestamp);
+        if (seconds) {
+            return formatSeconds(seconds);
+        } else {
+            return "??:??";
+        }
+    }
+}
+
+function parseDuration(duration) {
+    const match = duration.match(/^((\d+)h)?((\d+)m)?((\d+)s)?$/);
+    const h = parseInt(match[2] ?? 0);
+    const m = parseInt(match[4] ?? 0);
+    const s = parseInt(match[6] ?? 0);
+    const seconds = h * 3600 + m * 60 + s;
+    return seconds;
 }
