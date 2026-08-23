@@ -1,10 +1,19 @@
 const NO_VIDEO_PLAYING_MESSAGE = "No video is currently playing.";
+const PLAYBACK_DESYNC_THRESHOLD = 0.5;
 const roomId = getRoomId();
 
 let player;
 /** @type WebSocket */
 let ws;
-let serverState = { state: null, position: null };
+let serverState = {
+    state: null,
+    position: null,
+    positionTimestamp: null,
+};
+const updateServerPosition = (position) => {
+    serverState.position = position;
+    serverState.positionTimestamp = new Date().getTime();
+};
 let syncing = false;
 /** @type HTMLElement */
 let userlist;
@@ -195,7 +204,7 @@ async function initPlayer(userName) {
                 case YT.PlayerState.PLAYING:
                     if (serverState.state !== YT.PlayerState.PLAYING) {
                         serverState.state = YT.PlayerState.PLAYING;
-                        serverState.position = player.getCurrentTime();
+                        updateServerPosition(player.getCurrentTime());
                         ws.send(
                             JSON.stringify({
                                 type: "play",
@@ -209,7 +218,7 @@ async function initPlayer(userName) {
                 case YT.PlayerState.PAUSED:
                     if (serverState.state !== YT.PlayerState.PAUSED) {
                         serverState.state = YT.PlayerState.PAUSED;
-                        serverState.position = player.getCurrentTime();
+                        updateServerPosition(player.getCurrentTime());
                         ws.send(
                             JSON.stringify({
                                 type: "pause",
@@ -254,8 +263,8 @@ async function initPlayer(userName) {
                 updateQueue(payload.queue);
                 serverState = {
                     state: payload.playbackState,
-                    position: payload.videoPos,
                 };
+                updateServerPosition(payload.videoPos);
                 initUserlist(payload.users);
                 break;
             case "play":
@@ -302,7 +311,7 @@ async function initPlayer(userName) {
                 serverState.position !== null &&
                 currentTime !== serverState.position
             ) {
-                serverState.position = currentTime;
+                updateServerPosition(currentTime);
                 ws.send(
                     JSON.stringify({
                         type: "pause",
@@ -310,6 +319,26 @@ async function initPlayer(userName) {
                             position: currentTime,
                         },
                     }),
+                );
+            }
+        } else if (state === YT.PlayerState.PLAYING) {
+            const currentTime = player.getCurrentTime();
+            const now = new Date().getTime();
+            const elapsed = (now - serverState.positionTimestamp) / 1000;
+            const expectedTime = serverState.position + elapsed;
+            const difference = Math.abs(expectedTime - currentTime);
+            if (difference > PLAYBACK_DESYNC_THRESHOLD) {
+                updateServerPosition(currentTime);
+                ws.send(
+                    JSON.stringify({
+                        type: "play",
+                        payload: {
+                            position: currentTime,
+                        },
+                    }),
+                );
+                console.log(
+                    `currentTime: ${currentTime}, expectedTime: ${expectedTime}, difference: ${difference}`,
                 );
             }
         }
@@ -407,6 +436,7 @@ function updateCurrentVideoInfo(video) {
 
 function updatePlayerState(newState) {
     serverState = { ...newState };
+    updateServerPosition(serverState.position);
 
     syncing = true;
     setTimeout(() => {
