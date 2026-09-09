@@ -286,6 +286,12 @@ button {
     color: var(--color-subtext-0);
 }
 
+.queue-total-runtime {
+    font-size: 0.7em;
+    color: var(--color-overlay-0);
+    margin-left: 0.4em;
+}
+
 .queued-by {
     font-size: 0.6em;
     color: var(--color-surface-2);
