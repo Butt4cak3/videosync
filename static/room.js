@@ -13,6 +13,8 @@ let userlistMobile;
 /** @type HTMLElement */
 let queuewrapper;
 /** @type HTMLElement */
+let queueTotalRuntime;
+/** @type HTMLElement */
 let playerWrapper;
 /** @type HTMLElement */
 let currentVideoInfoPanel;
@@ -59,6 +61,7 @@ async function init() {
     userlist = document.getElementById("userlist");
     userlistMobile = document.getElementById("userlist_mobile");
     queuewrapper = document.getElementById("queuewrapper");
+    queueTotalRuntime = document.getElementById("queue_total_runtime");
     currentVideoInfoPanel = document.getElementById("current_video_info_panel");
     currentVideoInfoPanelMobile = document.getElementById(
         "current_video_info_panel_mobile",
@@ -481,6 +484,9 @@ function updateQueue(queue) {
         const el = createQueueItem(queue, video, i);
         queuewrapper.appendChild(el);
     }
+
+    const totalNs = queue.reduce((sum, video) => sum + video.duration, 0);
+    queueTotalRuntime.textContent = queue.length === 0 ? "" : "(" + formatNanosecondsWithUnits(totalNs) + ")";
 }
 
 function createCurrentVideoInfo(video) {
@@ -631,18 +637,36 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
-function formatNanoseconds(ns) {
-    let seconds = ns / 1_000_000_000;
-    return formatSeconds(seconds);
-}
-
-function formatSeconds(s) {
-    // output is in mm:ss or hh:mm:ss if seconds are more than 1 hour
-    let seconds = Math.floor(s);
+function splitDuration(totalSeconds) {
+    let seconds = Math.floor(totalSeconds);
     const hours = Math.floor(seconds / 3600);
     seconds -= hours * 3600;
     const minutes = Math.floor(seconds / 60);
     seconds -= minutes * 60;
+    return { hours, minutes, seconds };
+}
+
+function formatNanoseconds(ns) {
+    return formatSeconds(ns / 1_000_000_000);
+}
+
+function formatNanosecondsWithUnits(ns) {
+    const { hours, minutes, seconds } = splitDuration(ns / 1_000_000_000);
+
+    const parts = [];
+    if (hours > 0) {
+        parts.push(hours + "h");
+    }
+    if (hours > 0 || minutes > 0) {
+        parts.push(minutes + "m");
+    }
+    parts.push(seconds + "s");
+    return parts.join(" ");
+}
+
+function formatSeconds(s) {
+    // output is in mm:ss or hh:mm:ss if seconds are more than 1 hour
+    const { hours, minutes, seconds } = splitDuration(s);
 
     let str = "";
     if (hours > 0) {
